@@ -21,16 +21,18 @@ function Transaction(props) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [transaction, setTransaction] = React.useState([]);
   const [transactionDetail, setTransactionDetail] = React.useState([]);
+
+  const [sortBy, setSortBy] = React.useState("");
+  const [desc, setDesc] = React.useState(false);
+  const [tranStatus, setTranStatus] = React.useState(["unpaid", "paid"]);
+
+  const [filterOrderId, setFilterOrderId] = React.useState("");
+  const [keyword, setKeyword] = React.useState("");
   const [page, setPage] = React.useState(0);
   const [limit, setLimit] = React.useState(10);
   const [pages, setPages] = React.useState(0);
   const [rows, setRows] = React.useState(0);
-  const [sortBy, setSortBy] = React.useState("");
-  const [desc, setDesc] = React.useState(false);
-  const [tranStatus, setTranStatus] = React.useState(["unpaid", "pending", "paid"]);
-
-  const [filterOrderId, setFilterOrderId] = React.useState("");
-  const [filterName, setFilterName] = React.useState("");
+  const [pageMessage, setPageMessage] = React.useState("");
 
   const [edit, setEdit] = React.useState(false);
   const [editId, setEditId] = React.useState(false);
@@ -38,12 +40,13 @@ function Transaction(props) {
 
   const getTransactionData = async () => {
     try {
-      let response = await Axios.get(API_URL + `/transactions/all`);
-      console.log();
-      setTransaction(response.data);
-      //   setPage(response.data.page);
-      //   setPages(response.data.totalPage);
-      //   setRows(response.data.totalRows);
+      let response = await Axios.get(
+        API_URL + `/transactions?orderId=${keyword}&page=${page}&limit=${limit}`
+      );
+      setTransaction(response.data.data);
+      setPage(response.data.page);
+      setPages(response.data.totalPage);
+      setRows(response.data.totalRows);
     } catch (error) {
       console.log(error);
       setTransaction([]);
@@ -147,15 +150,6 @@ function Transaction(props) {
                 <Button width="50%" isActive="false" textTransform="capitalize" colorScheme="red">
                   {status}
                 </Button>
-              ) : status === "pending" ? (
-                <Button
-                  width="50%"
-                  isActive="false"
-                  textTransform="capitalize"
-                  colorScheme="yellow"
-                >
-                  {status}
-                </Button>
               ) : (
                 <Button
                   width="50%"
@@ -246,7 +240,9 @@ function Transaction(props) {
             </Text>
             <Text as="b" pr={20} py={4} fontSize="2xl">
               Status:{" "}
-              {transactionDetail.length > 0 ? transactionDetail[0].transaction.status : null}
+              {transactionDetail.length > 0
+                ? transactionDetail[0].transaction.status.toUpperCase()
+                : null}
             </Text>
           </div>
           <div className="d-flex flex-row justify-content-between mt-5">
@@ -257,7 +253,7 @@ function Transaction(props) {
             <Text fontSize="xl" textTransform="capitalize" pe={6}>
               Created By:
               {transactionDetail.length > 0
-                ? `${transactionDetail[0].transaction.user.firstName}
+                ? ` ${transactionDetail[0].transaction.user.firstName}
                 ${transactionDetail[0].transaction.user.lastName}`
                 : null}
             </Text>
@@ -336,158 +332,174 @@ function Transaction(props) {
 
   useEffect(() => {
     getTransactionData();
-  }, []);
+  }, [page, keyword]);
+
+  const changePage = ({ selected }) => {
+    setPage(selected);
+    if (selected === 9) {
+      setPageMessage(
+        "If you can't find the data you're looking for, please try using a more specific keyword"
+      );
+    } else {
+      setPageMessage("");
+    }
+  };
+
+  const searchData = (e) => {
+    e.preventDefault();
+    setPage(0);
+    setKeyword(filterOrderId);
+  };
 
   return (
-    <div className="container-fluid mx-3 mt-3">
+    <div className="container-fluid mx-1 mt-3">
       <Header pageName="Transaction" />
-      <div
-        style={{ width: "min-content" }}
-        className=" p-3 d-flex flex-column gap-3 align-items-right justify-content-start border border-secondary rounded-3"
-      >
-        <h5 className="h5">Filter By:</h5>
+      <div className="d-flex flex-column">
+        <div className="d-flex flex-row">
+          <div
+            style={{ width: "min-content" }}
+            className="d-flex flex-column align-items-right justify-content-start"
+          >
+            <div className="p-3 d-flex flex-column gap-3 border border-secondary rounded-3">
+              <h5 className="h5">Search:</h5>
 
-        <FormControl>
-          <FormLabel color="gray.500" fontSize="14px">
-            Name
-          </FormLabel>
-          <Input
-            w={200}
-            focusBorderColor="#E96F16"
-            rounded={6}
-            shadow="sm"
-            size="sm"
-            type="text"
-            onChange={(e) => setFilterName(e.target.value)}
-            onKeyUp={getTransactionData}
-          />
-        </FormControl>
-
-        <FormControl>
-          <FormLabel color="gray.500" fontSize="14px">
-            Order ID
-          </FormLabel>
-          <Input
-            w={200}
-            focusBorderColor="#E96F16"
-            rounded={6}
-            shadow="sm"
-            size="sm"
-            type="text"
-            onChange={(e) => setFilterOrderId(e.target.value)}
-            onKeyUp={getTransactionData}
-          />
-        </FormControl>
-      </div>
-
-      <TableContainer mt="6">
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>
-                <Button
-                  type="button"
-                  rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                  colorScheme="gray"
-                  variant="link"
-                  onClick={() => {
-                    setDesc(!desc);
-                    setSortBy("orderId");
-                  }}
-                >
+              <FormControl>
+                <FormLabel color="gray.500" fontSize="14px">
                   Order ID
-                </Button>
-              </Th>
-              <Th>
-                <Button
-                  type="button"
-                  rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                  colorScheme="gray"
-                  variant="link"
-                  onClick={() => {
-                    setDesc(!desc);
-                    setSortBy("firstName");
-                  }}
-                >
-                  Created By
-                </Button>
-              </Th>
-              <Th>
-                <Button
-                  type="button"
-                  rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                  colorScheme="gray"
-                  variant="link"
-                  onClick={() => {
-                    setDesc(!desc);
-                    setSortBy("notes");
-                  }}
-                >
-                  Notes
-                </Button>
-              </Th>
-              <Th>
-                <Button
-                  type="button"
-                  rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                  colorScheme="gray"
-                  variant="link"
-                  onClick={() => {
-                    setDesc(!desc);
-                    setSortBy("createdAt");
-                  }}
-                >
-                  Date
-                </Button>
-              </Th>
-              <Th>
-                <Button
-                  type="button"
-                  rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                  colorScheme="gray"
-                  variant="link"
-                  onClick={() => {
-                    setDesc(!desc);
-                    setSortBy("status");
-                  }}
-                >
-                  Status
-                </Button>
-              </Th>
-              <Th>
-                <Button type="button" colorScheme="gray" variant="link">
-                  Action
-                </Button>
-              </Th>
-              <Th>
-                <Button type="button" colorScheme="gray" variant="link">
-                  Set Status
-                </Button>
-              </Th>
-            </Tr>
-          </Thead>
-          <Tbody>{renderData()}</Tbody>
-          <TableCaption>
-            <div className="d-flex justify-content-start">
-              Total Rows: {rows} Page: {rows ? page + 1 : 0} of {pages}
+                </FormLabel>
+                <Input
+                  w={200}
+                  focusBorderColor="#E96F16"
+                  rounded={6}
+                  shadow="sm"
+                  size="sm"
+                  type="text"
+                  value={filterOrderId}
+                  onChange={(e) => setFilterOrderId(e.target.value)}
+                />
+                <button onClick={searchData} type="button" className="btn btn-outline-danger mt-3">
+                  Search
+                </button>
+              </FormControl>
             </div>
-            <div key={rows} className="d-flex flex-row gap-5 justify-content-center">
-              <ReactPaginate
-                previousLabel={
-                  <IconButton variant="ghost" colorScheme="red" icon={<ArrowLeftIcon />} />
-                }
-                nextLabel={
-                  <IconButton variant="ghost" colorScheme="red" icon={<ArrowRightIcon />} />
-                }
-                pageCount={Math.min(10, pages)}
-                containerClassName="d-flex align-items-center justify-content-center gap-3 pagination"
-                activeClassName="page-item active"
-                pageLinkClassName="page-link"
-              />
-            </div>
-          </TableCaption>
-        </Table>
-      </TableContainer>
+          </div>
+
+          <div className="w-100">
+            <TableContainer>
+              <Table variant="simple">
+                <Thead>
+                  <Tr>
+                    <Th>
+                      <Button
+                        type="button"
+                        rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                        colorScheme="gray"
+                        variant="link"
+                        onClick={() => {
+                          setDesc(!desc);
+                          setSortBy("orderId");
+                        }}
+                      >
+                        Order ID
+                      </Button>
+                    </Th>
+                    <Th>
+                      <Button
+                        type="button"
+                        rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                        colorScheme="gray"
+                        variant="link"
+                        onClick={() => {
+                          setDesc(!desc);
+                          setSortBy("firstName");
+                        }}
+                      >
+                        Created By
+                      </Button>
+                    </Th>
+                    <Th>
+                      <Button
+                        type="button"
+                        rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                        colorScheme="gray"
+                        variant="link"
+                        onClick={() => {
+                          setDesc(!desc);
+                          setSortBy("notes");
+                        }}
+                      >
+                        Notes
+                      </Button>
+                    </Th>
+                    <Th>
+                      <Button
+                        type="button"
+                        rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                        colorScheme="gray"
+                        variant="link"
+                        onClick={() => {
+                          setDesc(!desc);
+                          setSortBy("createdAt");
+                        }}
+                      >
+                        Date
+                      </Button>
+                    </Th>
+                    <Th>
+                      <Button
+                        type="button"
+                        rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                        colorScheme="gray"
+                        variant="link"
+                        onClick={() => {
+                          setDesc(!desc);
+                          setSortBy("status");
+                        }}
+                      >
+                        Status
+                      </Button>
+                    </Th>
+                    <Th>
+                      <Button type="button" colorScheme="gray" variant="link">
+                        Action
+                      </Button>
+                    </Th>
+                    <Th>
+                      <Button type="button" colorScheme="gray" variant="link">
+                        Set Status
+                      </Button>
+                    </Th>
+                  </Tr>
+                </Thead>
+                <Tbody>{renderData()}</Tbody>
+                <TableCaption>
+                  <div className="d-flex justify-content-start">
+                    Total Rows: {rows} Page: {rows ? page + 1 : 0} of {pages}
+                  </div>
+                </TableCaption>
+              </Table>
+            </TableContainer>
+          </div>
+        </div>
+
+        <div>
+          <div className="d-flex justify-content-center text-danger">{pageMessage}</div>
+          <div key={rows} className="d-flex flex-row gap-5 justify-content-center">
+            <ReactPaginate
+              previousLabel={
+                <IconButton variant="ghost" colorScheme="red" icon={<ArrowLeftIcon />} />
+              }
+              nextLabel={<IconButton variant="ghost" colorScheme="red" icon={<ArrowRightIcon />} />}
+              pageCount={Math.min(10, pages)}
+              onPageChange={changePage}
+              containerClassName="d-flex align-items-center justify-content-center gap-2 pagination"
+              activeClassName="page-item active"
+              pageLinkClassName="page-link rounded-3"
+              disabledLinkClassName="page-link disabled border-0"
+            />
+          </div>
+        </div>
+      </div>
 
       <Modal isOpen={isOpen} onClose={onBtnClose} isCentered size="2xl">
         <ModalOverlay />

@@ -84,12 +84,13 @@ function Cashier(props) {
   const [limit, setLimit] = React.useState(10);
   const [pages, setPages] = React.useState(0);
   const [rows, setRows] = React.useState(0);
+  const [pageMessage, setPageMessage] = React.useState("");
 
   const [filterName, setFilterName] = React.useState("");
   const [filterLoc, setFilterLoc] = React.useState("");
 
   const getCashierData = async () => {
-    let reqURI = ["/users/all?"];
+    let reqURI = [`/users?limmit=${limit}&page=${page}`];
     let reqQuery = [];
     if (filterName !== "") {
       reqQuery.push(`name=${filterName}`);
@@ -106,10 +107,10 @@ function Cashier(props) {
     console.log(reqURI + reqQuery.join("&"));
     try {
       let response = await Axios.get(API_URL + reqURI + reqQuery.join("&"));
-      setCashier(response.data.rows);
-      // setPage(response.data.page);
-      // setPages(response.data.totalPage);
-      // setRows(response.data.totalRows);
+      setCashier(response.data.data);
+      setPage(response.data.page);
+      setPages(response.data.totalPage);
+      setRows(response.data.totalRows);
     } catch (error) {
       console.log(error);
       setCashier([]);
@@ -203,6 +204,13 @@ function Cashier(props) {
 
   const changePage = ({ selected }) => {
     setPage(selected);
+    if (selected === 9) {
+      setPageMessage(
+        "If you can't find the data you're looking for, please try using a more specific keyword"
+      );
+    } else {
+      setPageMessage("");
+    }
   };
 
   const renderModalContent = () => {
@@ -448,170 +456,181 @@ function Cashier(props) {
   const initialRef = React.useRef(null);
 
   return (
-    <div className="container-fluid mx-3 mt-3">
+    <div className="container-fluid mx-1 mt-3">
       <Header open={onOpen} pageName="Cashier" />
-      <div
-        style={{ width: "min-content" }}
-        className=" p-3 d-flex flex-column gap-3 align-items-right justify-content-start border border-secondary rounded-3"
-      >
-        <h5 className="h5">Filter By:</h5>
+      <div className="d-flex flex-column">
+        <div className="d-flex flex-row">
+          <div
+            style={{ width: "min-content" }}
+            className=" p-3 d-flex flex-column gap-3 align-items-right justify-content-start"
+          >
+            <div className="p-3 d-flex flex-column gap-3 border border-secondary rounded-3">
+              <h5 className="h5">Filter By:</h5>
 
-        <FormControl>
-          <FormLabel color="gray.500" fontSize="14px">
-            Name
-          </FormLabel>
-          <Input
-            w={200}
-            focusBorderColor="#E96F16"
-            rounded={6}
-            shadow="sm"
-            size="sm"
-            type="text"
-            onChange={(e) => setFilterName(e.target.value)}
-            onKeyUp={getCashierData}
-          />
-        </FormControl>
+              <FormControl>
+                <FormLabel color="gray.500" fontSize="14px">
+                  Name
+                </FormLabel>
+                <Input
+                  w={200}
+                  focusBorderColor="#E96F16"
+                  rounded={6}
+                  shadow="sm"
+                  size="sm"
+                  type="text"
+                  onChange={(e) => setFilterName(e.target.value)}
+                  onKeyUp={getCashierData}
+                />
+              </FormControl>
 
-        <FormControl>
-          <FormLabel color="gray.500" fontSize="14px">
-            Location
-          </FormLabel>
-          <Input
-            w={200}
-            focusBorderColor="#E96F16"
-            rounded={6}
-            shadow="sm"
-            size="sm"
-            type="text"
-            onChange={(e) => setFilterLoc(e.target.value)}
-            onKeyUp={getCashierData}
-          />
-        </FormControl>
-      </div>
-
-      <TableContainer mt="6">
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>
-                <Button
-                  type="button"
-                  rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                  colorScheme="gray"
-                  variant="link"
-                  onClick={() => {
-                    setDesc(!desc);
-                    setSortBy("idusers");
-                  }}
-                >
-                  ID
-                </Button>
-              </Th>
-              <Th>
-                <Button
-                  type="button"
-                  rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                  colorScheme="gray"
-                  variant="link"
-                  onClick={() => {
-                    setDesc(!desc);
-                    setSortBy("firstName");
-                  }}
-                >
-                  First Name
-                </Button>
-              </Th>
-              <Th>
-                <Button
-                  type="button"
-                  rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                  colorScheme="gray"
-                  variant="link"
-                  onClick={() => {
-                    setDesc(!desc);
-                    setSortBy("lastName");
-                  }}
-                >
-                  Last Name
-                </Button>
-              </Th>
-              <Th>
-                <Button
-                  type="button"
-                  rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                  colorScheme="gray"
-                  variant="link"
-                  onClick={() => {
-                    setDesc(!desc);
-                    setSortBy("email");
-                  }}
-                >
-                  Email
-                </Button>
-              </Th>
-              <Th>
-                <Button
-                  type="button"
-                  rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                  colorScheme="gray"
-                  variant="link"
-                  onClick={() => {
-                    setDesc(!desc);
-                    setSortBy("phone");
-                  }}
-                >
-                  Phone
-                </Button>
-              </Th>
-              <Th>
-                <Button
-                  type="button"
-                  rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                  colorScheme="gray"
-                  variant="link"
-                  onClick={() => {
-                    setDesc(!desc);
-                    setSortBy("location");
-                  }}
-                >
+              <FormControl>
+                <FormLabel color="gray.500" fontSize="14px">
                   Location
-                </Button>
-              </Th>
-              <Th>
-                <Button type="button" colorScheme="gray" variant="link">
-                  Action
-                </Button>
-              </Th>
-              <Th>
-                <Button type="button" colorScheme="gray" variant="link">
-                  Active
-                </Button>
-              </Th>
-            </Tr>
-          </Thead>
-          <Tbody>{renderData()}</Tbody>
-          <TableCaption>
-            <div className="d-flex justify-content-start">
-              Total Rows: {rows} Page: {rows ? page + 1 : 0} of {pages}
+                </FormLabel>
+                <Input
+                  w={200}
+                  focusBorderColor="#E96F16"
+                  rounded={6}
+                  shadow="sm"
+                  size="sm"
+                  type="text"
+                  onChange={(e) => setFilterLoc(e.target.value)}
+                  onKeyUp={getCashierData}
+                />
+              </FormControl>
             </div>
-            <div key={rows} className="d-flex flex-row gap-5 justify-content-center">
-              <ReactPaginate
-                previousLabel={
-                  <IconButton variant="ghost" colorScheme="red" icon={<ArrowLeftIcon />} />
-                }
-                nextLabel={
-                  <IconButton variant="ghost" colorScheme="red" icon={<ArrowRightIcon />} />
-                }
-                pageCount={Math.min(10, pages)}
-                onPageChange={changePage}
-                containerClassName="d-flex align-items-center justify-content-center gap-3 pagination"
-                activeClassName="page-item active"
-                pageLinkClassName="page-link"
-              />
-            </div>
-          </TableCaption>
-        </Table>
-      </TableContainer>
+          </div>
+
+          <div className="w-100">
+            <TableContainer mt="6">
+              <Table variant="simple">
+                <Thead>
+                  <Tr>
+                    <Th>
+                      <Button
+                        type="button"
+                        rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                        colorScheme="gray"
+                        variant="link"
+                        onClick={() => {
+                          setDesc(!desc);
+                          setSortBy("idusers");
+                        }}
+                      >
+                        ID
+                      </Button>
+                    </Th>
+                    <Th>
+                      <Button
+                        type="button"
+                        rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                        colorScheme="gray"
+                        variant="link"
+                        onClick={() => {
+                          setDesc(!desc);
+                          setSortBy("firstName");
+                        }}
+                      >
+                        First Name
+                      </Button>
+                    </Th>
+                    <Th>
+                      <Button
+                        type="button"
+                        rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                        colorScheme="gray"
+                        variant="link"
+                        onClick={() => {
+                          setDesc(!desc);
+                          setSortBy("lastName");
+                        }}
+                      >
+                        Last Name
+                      </Button>
+                    </Th>
+                    <Th>
+                      <Button
+                        type="button"
+                        rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                        colorScheme="gray"
+                        variant="link"
+                        onClick={() => {
+                          setDesc(!desc);
+                          setSortBy("email");
+                        }}
+                      >
+                        Email
+                      </Button>
+                    </Th>
+                    <Th>
+                      <Button
+                        type="button"
+                        rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                        colorScheme="gray"
+                        variant="link"
+                        onClick={() => {
+                          setDesc(!desc);
+                          setSortBy("phone");
+                        }}
+                      >
+                        Phone
+                      </Button>
+                    </Th>
+                    <Th>
+                      <Button
+                        type="button"
+                        rightIcon={desc ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                        colorScheme="gray"
+                        variant="link"
+                        onClick={() => {
+                          setDesc(!desc);
+                          setSortBy("location");
+                        }}
+                      >
+                        Location
+                      </Button>
+                    </Th>
+                    <Th>
+                      <Button type="button" colorScheme="gray" variant="link">
+                        Action
+                      </Button>
+                    </Th>
+                    <Th>
+                      <Button type="button" colorScheme="gray" variant="link">
+                        Active
+                      </Button>
+                    </Th>
+                  </Tr>
+                </Thead>
+                <Tbody>{renderData()}</Tbody>
+                <TableCaption>
+                  <div className="d-flex justify-content-start">
+                    Total Rows: {rows} Page: {rows ? page + 1 : 0} of {pages}
+                  </div>
+                </TableCaption>
+              </Table>
+            </TableContainer>
+          </div>
+        </div>
+
+        <div>
+          <div className="d-flex justify-content-center text-danger">{pageMessage}</div>
+          <div key={rows} className="d-flex flex-row gap-5 justify-content-center">
+            <ReactPaginate
+              previousLabel={
+                <IconButton variant="ghost" colorScheme="red" icon={<ArrowLeftIcon />} />
+              }
+              nextLabel={<IconButton variant="ghost" colorScheme="red" icon={<ArrowRightIcon />} />}
+              pageCount={Math.min(10, pages)}
+              onPageChange={changePage}
+              containerClassName="d-flex align-items-center justify-content-center gap-2 pagination"
+              activeClassName="page-item active"
+              pageLinkClassName="page-link rounded-3"
+              disabledLinkClassName="page-link disabled border-0"
+            />
+          </div>
+        </div>
+      </div>
 
       <Modal
         closeOnOverlayClick={false}

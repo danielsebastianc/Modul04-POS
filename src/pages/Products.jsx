@@ -30,11 +30,18 @@ import { Button, Input, InputRightElement, Select } from "@chakra-ui/react";
 import Axios from "axios";
 import { API_URL } from "../helper";
 import Header from "../components/Header";
-import { Search2Icon, ChevronUpIcon, ChevronDownIcon } from "@chakra-ui/icons";
+import {
+  Search2Icon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  ArrowRightIcon,
+  ArrowLeftIcon,
+} from "@chakra-ui/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { addCartItem } from "../actions/cart";
 import { BiTrash } from "react-icons/bi";
 import { useToast } from "@chakra-ui/react";
+import ReactPaginate from "react-paginate";
 
 function Products(props) {
   const dispatch = useDispatch();
@@ -65,6 +72,12 @@ function Products(props) {
 
   const [newCat, setNewCat] = React.useState("");
 
+  const [page, setPage] = React.useState(0);
+  const [limit, setLimit] = React.useState(10);
+  const [pages, setPages] = React.useState(0);
+  const [rows, setRows] = React.useState(0);
+  const [pageMessage, setPageMessage] = React.useState("");
+
   const { idusers } = useSelector((state) => {
     return {
       idusers: state.user.idusers,
@@ -72,7 +85,7 @@ function Products(props) {
   });
 
   const getProductsData = async () => {
-    let reqURI = ["/products/all?"];
+    let reqURI = [`/products?limit=${limit}&page=${page}&`];
     let reqQuery = [];
     if (chosenCat !== null) {
       reqQuery.push(`category=${chosenCat}`);
@@ -90,7 +103,10 @@ function Products(props) {
     console.log(reqURI + reqQuery.join("&"));
     try {
       let response = await Axios.get(API_URL + reqURI + reqQuery.join("&"));
-      setProducts(response.data.rows);
+      setProducts(response.data.data);
+      setPage(response.data.page);
+      setPages(response.data.totalPage);
+      setRows(response.data.totalRows);
     } catch (error) {
       console.log(error);
       setProducts([]);
@@ -646,12 +662,23 @@ function Products(props) {
   useEffect(() => {
     getProductsData();
     getCatTitle();
-  }, [chosenCat, desc]);
+  }, [chosenCat, desc, page]);
+
+  const changePage = ({ selected }) => {
+    setPage(selected);
+    if (selected === 9) {
+      setPageMessage(
+        `If you can't find the data you're looking for, please try using a more specific keyword`
+      );
+    } else {
+      setPageMessage("");
+    }
+  };
 
   const initialRef = React.useRef(null);
 
   return (
-    <div className="container-fluid mx-3 mt-3">
+    <div className="container-fluid mx-1 mt-3">
       <Header open={onOpen} pageName="Product" />
       <div className="d-flex flex-row gap-4">
         {renderCategory()}
@@ -710,13 +737,30 @@ function Products(props) {
             </div>
           </div>
           <Divider />
-          <div className="d-flex flex-row mt-3 gap-4">
-            <Wrap spacing="25px">{renderProduct()}</Wrap>
-          </div>
+          <Wrap pb={5} px={2} spacing="26px" direction="row" justifyContent="center">
+            {renderProduct()}
+          </Wrap>
         </div>
         <div className={cart.length > 0 ? "w-50" : "d-none"}>
           {cart.length > 0 ? renderCart() : null}
         </div>
+      </div>
+
+      <div className="d-flex justify-content-start">
+        Page: {rows ? page + 1 : 0} of {pages}
+      </div>
+      <div className="d-flex justify-content-center text-danger">{pageMessage}</div>
+      <div className="d-flex flex-row gap-5 justify-content-center mb-3">
+        <ReactPaginate
+          previousLabel={<IconButton variant="ghost" colorScheme="red" icon={<ArrowLeftIcon />} />}
+          nextLabel={<IconButton variant="ghost" colorScheme="red" icon={<ArrowRightIcon />} />}
+          pageCount={Math.min(10, pages)}
+          containerClassName="d-flex align-items-center justify-content-center gap-2 pagination"
+          activeClassName="page-item active"
+          pageLinkClassName="page-link rounded-3"
+          disabledLinkClassName="page-link disabled border-0"
+          onPageChange={changePage}
+        />
       </div>
 
       <Modal
